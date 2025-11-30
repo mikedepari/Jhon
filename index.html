@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Rekomendasi Menu Sehat Berbasis ML</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Icons+Outlined" rel="stylesheet">
+    
+    <style>
+        /* CSS Reset dan Variabel - TEMA UNGU-ORANYE */
+        :root {
+            /* Warna diambil mendekati gradasi di gambar */
+            --color-primary-start: #6f42c1; /* Ungu */
+            --color-primary-end: #e83e8c; /* Magenta/Pink */
+            --color-accent: #ff7e00; /* Oranye Terang untuk Aksen */
+            --color-dark: #343a40; /* Hitam Tua */
+            --color-content-bg-pure: #FFFFFF;
+            --color-secondary: #ffffff;
+            --color-text: #2c3e50;
+            --color-border: #e0e0e0;
+            --color-hover: #f3e5f5; /* Ungu sangat muda untuk hover */
+            --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.05);
+            --shadow-heavy: 0 4px 15px rgba(0, 0, 0, 0.15);
+            --header-height: 100px; 
+            
+            /* Warna Khusus */
+            --color-success: #28aa46; /* Hijau Segar */
+            --color-success-light: #e6ffec;
+            --color-warning: #ffc107;
+            --color-error: #dc3545;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: var(--color-text);
+            min-height: 100vh;
+            display: flex; 
+            flex-direction: column;
+        }
+        
+        /* HEADER - Branding */
+        .header {
+            /* Gradasi Ungu-Magenta */
+            background: linear-gradient(to right, var(--color-primary-start), var(--color-primary-end)); 
+            color: white;
+            padding: 20px 40px;
+            box-shadow: var(--shadow-heavy);
+            position: sticky; 
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            letter-spacing: 0.5px;
+            margin: 0;
+        }
+        
+        .header p {
+            margin-top: 5px;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        /* NAVIGATION BAR (TOP-NAV) - Meniru Gaya Gambar */
+        .top-nav-container {
+            width: 100%;
+            background-color: var(--color-secondary);
+            padding: 10px 40px;
+            box-shadow: var(--shadow-light);
+            z-index: 999;
+            position: sticky;
+            top: var(--header-height); /* Diletakkan di bawah header */
+        }
+
+        .top-nav {
+            display: flex;
+            justify-content: center;
+        }
+        
+        .nav-button {
+            display: flex;
+            align-items: center;
+            padding: 10px 25px;
+            margin: 0 10px; 
+            text-align: center;
+            /* Latar Belakang Tombol Default */
+            background: #f0f0f0; 
+            border: none;
+            border-radius: 6px; /* Kotak sudut melingkar */
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--color-text);
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-button .material-icons-outlined {
+            margin-right: 8px;
+            font-size: 20px;
+            color: var(--color-dark); 
+        }
+
+        .nav-button:hover {
+            background-color: var(--color-hover);
+            color: var(--color-primary-start);
+        }
+
+        .nav-button.active {
+            /* Gaya Tombol Aktif - Gradasi Ungu-Magenta */
+            background: linear-gradient(to right, var(--color-primary-start), var(--color-primary-end)); 
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+            border-radius: 8px;
+        }
+        
+        .nav-button.active .material-icons-outlined {
+            color: white;
+        }
+        
+        /* Hilangkan Sub-Nav yang tidak digunakan */
+        .sub-nav {
+            display: none; 
+        }
+
+        /* MAIN CONTENT AREA */
+        .content-area {
+            flex-grow: 1; 
+            padding: 30px;
+            background: #f8f9fa; /* Latar Belakang Abu-abu Muda */
+            min-height: calc(100vh - var(--header-height) - 45px); 
+        }
+        
+        /* Konten Umum */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .main-content-section {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .main-content-section.active {
+            display: block;
+        }
+
+        .content-section {
+            display: block; 
+            margin-bottom: 30px; 
+        }
+        
+        /* Kartu dengan aksen oranye pada judul */
+        .card { 
+            background: var(--color-content-bg-pure); 
+            border: 1px solid var(--color-border); 
+            border-radius: 12px; 
+            padding: 25px; 
+            margin-bottom: 25px; 
+            box-shadow: var(--shadow-light); 
+        }
+        
+        h2 { 
+            font-size: 24px; 
+            font-weight: 700; 
+            margin-bottom: 15px; 
+            color: var(--color-dark);
+            border-left: 5px solid var(--color-accent); /* Aksen Oranye */
+            padding-left: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        h2 .material-icons-outlined {
+            margin-right: 10px;
+            font-size: 28px;
+            color: var(--color-accent);
+        }
+        
+        h3 { 
+            font-size: 20px; 
+            font-weight: 600; 
+            margin-top: 20px; 
+            margin-bottom: 10px; 
+            color: var(--color-primary-start); /* Ungu untuk Subjudul */
+            border-bottom: 2px dashed var(--color-border); 
+            padding-bottom: 5px; 
+        }
+        
+        p, li, table { font-size: 16px; line-height: 1.7; color: var(--color-text); }
+        .form-rekomendasi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .form-group { display: flex; flex-direction: column; }
+        label { margin-bottom: 5px; font-weight: 600; color: var(--color-dark); }
+        input, select { padding: 12px; border: 1px solid var(--color-border); border-radius: 6px; font-size: 16px; background-color: #fff; }
+        
+        /* Tombol Submit Utama - Warna Oranye */
+        button.submit-btn { 
+            grid-column: 1 / -1; 
+            padding: 15px 20px; 
+            background: var(--color-accent); /* Tombol Oranye */
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 18px; 
+            font-weight: 700; 
+            transition: background-color 0.3s; 
+            box-shadow: 0 4px 8px rgba(255, 126, 0, 0.3); 
+        }
+        button.submit-btn:hover { background-color: #cc6500; }
+        
+        #hasil-prediksi { 
+            background-color: var(--color-success-light); 
+            padding: 25px; 
+            border-radius: 10px; 
+            border-left: 5px solid var(--color-success); 
+            opacity: 0; 
+            visibility: hidden; 
+            transition: opacity 1s ease-in-out; 
+            margin-top: 20px; 
+        }
+        #hasil-prediksi.show { opacity: 1; visibility: visible; }
+        
+        .riwayat-list { list-style-type: none; padding: 0; }
+        .riwayat-list li { background-color: #f7f7f7; margin-bottom: 8px; padding: 10px 15px; border-radius: 6px; border-left: 3px solid var(--color-primary-end); font-size: 15px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: var(--shadow-light); overflow: hidden; border-radius: 8px; margin-bottom: 20px; }
+        th, td { border: 1px solid var(--color-border); padding: 12px 15px; text-align: left; font-size: 15px; }
+        th { 
+            /* Warna header tabel Ungu-Magenta */
+            background: linear-gradient(to right, var(--color-primary-start), var(--color-primary-end)); 
+            color: white; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+        }
+        tr:nth-child(even) td { background-color: #fcfcfc; }
+        
+        /* RESPONSIVENESS */
+        @media (max-width: 768px) {
+            .header {
+                padding: 10px 15px;
+                position: static; 
+            }
+            .header h1 {
+                font-size: 20px;
+            }
+            .top-nav-container {
+                padding: 10px 15px;
+                top: 0; 
+                position: static;
+            }
+            .top-nav {
+                justify-content: flex-start;
+                overflow-x: auto;
+            }
+            .nav-button {
+                min-width: 150px; 
+                margin: 0 5px;
+            }
+            .content-area {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Sistem Rekomendasi Menu Sehat Berbasis ML</h1>
+        <p>Platform prediktif untuk optimalisasi nutrisi dan perencanaan diet</p>
+    </div>
+    
+    <div class="top-nav-container">
+        <nav class="top-nav">
+            <button class="nav-button active" onclick="switchMainContent('rekomendasi-section')">
+                <span class="material-icons-outlined">restaurant_menu</span> Rekomendasi
+            </button>
+            <button class="nav-button" onclick="switchMainContent('alur-kerja-section')">
+                <span class="material-icons-outlined">analytics</span> Alur Kerja Sistem
+            </button>
+            <button class="nav-button" onclick="switchMainContent('analisis-model')">
+                <span class="material-icons-outlined">auto_graph</span> Machine Learning
+            </button>
+        </nav>
+    </div>
+
+    <main class="content-area">
+        
+        <section id="rekomendasi-section" class="main-content-section active">
+            
+            <div id="input-rekomendasi" class="content-section">
+                <div class="card">
+                    <h2><span class="material-icons-outlined">person</span> 1. Input Profil Nutrisi & Estimasi Kebutuhan Kalori Harian</h2>
+                    <p>Modul ini berfungsi untuk mengumpulkan data antropometri dan gaya hidup pengguna, yang kemudian diolah untuk menghitung kebutuhan energi total (TDEE) dan menghasilkan klasifikasi menu diet yang paling optimal.</p>
+                </div>
+
+                <div class="card">
+                    <h3>Parameter Dasar Pengguna</h3>
+                    <form id="form-rekomendasi">
+                        <div class="form-rekomendasi-grid">
+                            <div class="form-group">
+                                <label for="usia">Usia (Tahun):</label>
+                                <input type="number" id="usia" value="30" min="18" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="aktivitas">Tingkat Aktivitas Harian (Aktivitas Fisik):</label>
+                                <select id="aktivitas" required>
+                                    <option value="rendah">Rendah (Jarang berolahraga)</option>
+                                    <option value="sedang" selected>Sedang (1-3x seminggu)</option>
+                                    <option value="tinggi">Tinggi (3-5x seminggu)</option>
+                                    <option value="sangat_tinggi">Sangat Tinggi (Setiap hari/Intens)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="berat">Berat Badan (kg):</label>
+                                <input type="number" id="berat" value="70" step="0.1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="preferensi">Tujuan Diet Utama:</label>
+                                <select id="preferensi" required>
+                                    <option value="omnivora" selected>Pertahankan Berat (Maintenance)</option>
+                                    <option value="vegetarian">Penurunan Berat Badan (Defisit)</option>
+                                    <option value="tinggi_protein">Pembentukan Otot (Surplus Protein)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="tinggi">Tinggi Badan (cm):</label>
+                                <input type="number" id="tinggi" value="175" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="target_kalori">Target Asupan Kalori (Kcal/hari):</label>
+                                <input type="number" id="target_kalori" value="2000" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="submit-btn">Proses Data & Dapatkan Klasifikasi Menu</button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="hasil-prediksi-menu" class="content-section">
+                <div id="hasil-prediksi" class="card">
+                    <h3>2. Hasil Klasifikasi Menu Harian Model KNN</h3>
+                    <p><strong>Kategori Diet Prediksi:</strong> <span id="status-prediksi" style="color: var(--color-success); font-weight: 700;">Menunggu Input...</span></p>
+                    <p id="rekomendasi-menu-output" style="font-size: 18px; margin-top: 10px;">Isi formulir di atas untuk melihat hasil klasifikasi dan contoh menu diet Anda.</p>
+                </div>
+            </div>
+
+            <div id="riwayat-rekomendasi" class="content-section">
+                 <div class="card">
+                    <h2><span class="material-icons-outlined">history</span> 3. Riwayat Estimasi Kebutuhan Anda</h2>
+                    <p>Sistem mencatat riwayat input profil untuk memonitor tren perubahan kebutuhan kalori dan diet dari waktu ke waktu (simulasi data historis).</p>
+                    <ul id="riwayat-list" class="riwayat-list">
+                        <li>[10-12-2025] Usia 30, Aktif Sedang, TDEE 2200 Kcal: Klasifikasi Maintenance Diet</li>
+                        <li>[05-12-2025] Usia 29, Aktif Tinggi, TDEE 2800 Kcal: Klasifikasi Surplus Protein</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+        <section id="alur-kerja-section" class="main-content-section">
+             <div class="card">
+                <h2><span class="material-icons-outlined">flowchart</span> Alur Pemrosesan Data untuk Rekomendasi Menu Sehat</h2>
+                <p>Alur ini menjelaskan tahapan yang dilalui oleh data profil pengguna, mulai dari input mentah hingga menghasilkan klasifikasi diet yang diprediksi oleh algoritma Machine Learning.</p>
+                
+                <h3>1. Ingesti dan Pengumpulan Data Awal</h3>
+                <p>Data mentah berupa Usia, Berat, Tinggi, dan Preferensi Diet dikumpulkan. Langkah awal ini sangat penting untuk memastikan akurasi perhitungan indeks seperti IMT dan TDEE.</p>
+                
+                <h3>2. Feature Engineering dan Normalisasi</h3>
+                <p>Fitur baru yang sangat prediktif, seperti **IMT (Indeks Massa Tubuh)** dan **TDEE (Total Daily Energy Expenditure)**, dihitung dari input dasar. Data kemudian diubah (encoding data kategorikal) dan diskalakan (normalisasi) agar model dapat membandingkan semua fitur secara adil menggunakan perhitungan jarak.</p>
+                
+                <h3>3. Proses Klasifikasi Jarak (KNN)</h3>
+                <p>Fitur yang telah diolah dimasukkan ke dalam model K-Nearest Neighbors (KNN). Model akan mengidentifikasi **K** sampel data pelatihan terdekat di ruang fitur. Klasifikasi diet yang paling dominan di antara K tetangga terdekat ini akan ditetapkan sebagai hasil prediksi untuk pengguna baru.</p>
+                
+                <h3>4. Output dan Penyajian Menu Optimal</h3>
+                <p>Hasil klasifikasi akhir (misalnya: *High-Protein Diet*) dicocokkan dengan basis data menu terstruktur. Sistem menyajikan contoh menu harian yang paling sesuai dengan kelas diet dan target kalori pengguna.</p>
+            </div>
+        </section>
+
+        <section id="analisis-model" class="main-content-section">
+            <div class="card">
+                <h2><span class="material-icons-outlined">memory</span> Analisis Model Inti: K-Nearest Neighbors (KNN)</h2>
+                <p>KNN dipilih karena kemampuannya dalam klasifikasi non-parametrik yang cocok untuk mengelompokkan profil nutrisi pengguna berdasarkan kedekatan fitur.</p>
+                
+                <h3>1. Prinsip Dasar Algoritma KNN</h3>
+                <p>KNN adalah algoritma pembelajaran terawasi (supervised learning) yang sangat intuitif. Ia bekerja berdasarkan asumsi bahwa titik-titik data yang dekat satu sama lain cenderung memiliki kelas yang sama. Input pengguna (titik baru) diklasifikasikan berdasarkan suara mayoritas dari K tetangga terdekatnya dalam dataset menu yang telah dilatih.</p>
+                
+                <h3>2. Parameter dan Fitur Utama</h3>
+                <table>
+                    <tr><th>Parameter/Fitur</th><th>Deskripsi & Tujuan dalam Rekomendasi</th></tr>
+                    <tr><td>K (Jumlah Tetangga)</td><td>Nilai yang dioptimalkan (misal K=7) untuk menyeimbangkan bias dan varians. Nilai yang terlalu kecil membuat model sensitif terhadap outlier.</td></tr>
+                    <tr><td>Distance Metric</td><td>Metode **Euclidean Distance** digunakan untuk mengukur jarak terpendek antara titik fitur pengguna dan titik data menu di ruang multidimensi.</td></tr>
+                    <tr><td>Fitur Utama (Input)</td><td>TDEE, IMT, dan Vektor Preferensi Diet (misalnya, [1, 0] untuk omnivora dan [0, 1] untuk vegetarian).</td></tr>
+                    <tr><td>Label (Output)</td><td>Kategori Diet yang Diprediksi: Maintenance, Defisit-Ringan, Surplus-Protein, Vegetarian-Maintenance.</td></tr>
+                </table>
+
+                <h3>3. Evaluasi Performa Model</h3>
+                <p>Performa model dievaluasi pada dataset pengujian untuk memastikan kemampuan generalisasi (simulasi metrik):</p>
+                <table>
+                    <tr><th>Metrik Kinerja</th><th>Nilai (Simulasi)</th><th>Interpretasi</th></tr>
+                    <tr><td>**Akurasi**</td><td>94.5%</td><td>Total persentase profil diet yang diklasifikasikan dengan benar oleh model.</td></tr>
+                    <tr><td>**Precision** (Defisit)</td><td>91.2%</td><td>Seberapa sering menu yang direkomendasikan untuk Defisit Kalori benar-benar cocok untuk tujuan Defisit.</td></tr>
+                    <tr><td>**Recall** (Surplus)</td><td>96.0%</td><td>Persentase semua kasus kebutuhan Surplus Protein yang berhasil diidentifikasi dan direkomendasikan oleh model.</td></tr>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+<script>
+        // Fungsi untuk mengganti konten utama
+        function switchMainContent(mainContentId) {
+            const allButtons = document.querySelectorAll('.top-nav .nav-button');
+            allButtons.forEach(btn => btn.classList.remove('active'));
+
+            const activeButton = document.querySelector(`[onclick="switchMainContent('${mainContentId}')"]`); 
+            if (activeButton) {
+                activeButton.classList.add('active');
+            }
+
+            const allSections = document.querySelectorAll('.main-content-section');
+            allSections.forEach(section => section.classList.remove('active'));
+
+            const targetSection = document.getElementById(mainContentId);
+            if (targetSection) {
+                targetSection.classList.add('active');
+                
+                const mainContent = document.querySelector('.content-area');
+                if (mainContent) {
+                    mainContent.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+        }
+        
+        // --- Fungsi Simulasi Prediksi ---
+        document.getElementById('form-rekomendasi').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            // Sembunyikan dan reset fade-in sebelum proses baru dimulai
+            const hasilPrediksiDiv = document.getElementById('hasil-prediksi');
+            hasilPrediksiDiv.classList.remove('show');
+
+            // Ambil nilai dari form
+            const usia = parseInt(document.getElementById('usia').value);
+            const berat = parseFloat(document.getElementById('berat').value);
+            const tinggi = parseFloat(document.getElementById('tinggi').value);
+            const aktivitas = document.getElementById('aktivitas').value;
+            let tujuanDiet = document.getElementById('preferensi').value; 
+            const targetKalori = parseInt(document.getElementById('target_kalori').value);
+            
+            // ===============================================
+            // VALIDASI INPUT MINIMUM
+            // ===============================================
+            if (isNaN(berat) || isNaN(tinggi) || isNaN(usia) || isNaN(targetKalori) || 
+                berat <= 10 || tinggi <= 50 || usia <= 17 || targetKalori <= 500) {
+                
+                // Tampilkan pesan kesalahan
+                document.getElementById('status-prediksi').textContent = "Input Tidak Valid/Kurang Lengkap!";
+                document.getElementById('status-prediksi').style.color = 'var(--color-error)'; 
+                document.getElementById('rekomendasi-menu-output').innerHTML = `**Error:** Harap pastikan semua input (Usia, Berat, Tinggi, Kalori) terisi dengan angka yang logis.`;
+                
+                setTimeout(() => {
+                    hasilPrediksiDiv.classList.add('show');
+                }, 50);
+                
+                return; 
+            }
+            // ===============================================
+
+
+            // Hitung IMT (tinggi dalam meter)
+            const tinggiM = tinggi / 100;
+            const imt = berat / (tinggiM * tinggiM);
+            
+            // Klasifikasi Dasar (Simulasi Logika Model KNN)
+            let jenisDiet = "Klasifikasi Maintenance Diet";
+            let menuRekomendasi = "Nasi Merah, Salmon Panggang (150gr), Sayuran Hijau Kukus";
+            let detailPrediksi = `Klasifikasi: Diet Seimbang. Mempertahankan berat badan ideal. (IMT: ${imt.toFixed(2)})`;
+            let statusWarna = 'var(--color-success)';
+            
+            // Logika Klasifikasi Berdasarkan Tujuan dan Input
+            if (tujuanDiet === 'vegetarian') {
+                jenisDiet = "Klasifikasi Defisit Kalori (Weight Loss)";
+                menuRekomendasi = "Salad Ayam Dada Rebus, Sup Kacang Merah Rendah Garam, dan Buah Pir";
+                detailPrediksi = `Klasifikasi: Defisit Ringan. Fokus pada kalori terkontrol dan makro seimbang. (IMT: ${imt.toFixed(2)})`;
+                statusWarna = 'var(--color-warning)';
+                
+                if (imt > 30) {
+                     jenisDiet = "Klasifikasi Defisit Intensif";
+                     menuRekomendasi = "Protein Shake, Sayuran Mentah, dan Air Putih (Pengawasan Medis Disarankan)";
+                     detailPrediksi = `Klasifikasi: Defisit Berat. Perlu penurunan kalori signifikan dan pengawasan. (IMT: ${imt.toFixed(2)})`;
+                     statusWarna = 'var(--color-error)';
+                }
+            } else if (tujuanDiet === 'tinggi_protein') {
+                 if (aktivitas === 'tinggi' || aktivitas === 'sangat_tinggi') {
+                    jenisDiet = "Klasifikasi Surplus Protein (Otot)";
+                    menuRekomendasi = "Steak Daging Merah (200gr), Nasi Putih Porsi Penuh, dan Tambahan Protein Whey";
+                    detailPrediksi = `Klasifikasi: Surplus Energi. Memprioritaskan asupan protein tinggi untuk pertumbuhan otot. (IMT: ${imt.toFixed(2)})`;
+                } else {
+                    jenisDiet = "Klasifikasi Maintenance dengan Protein Tinggi";
+                    menuRekomendasi = "Dada Ayam Panggang, Oatmeal, dan Telur Rebus (Porsi Kalori Maintenance)";
+                    detailPrediksi = `Klasifikasi: Maintenance. Kebutuhan protein tinggi namun kalori dipertahankan. (IMT: ${imt.toFixed(2)})`;
+                }
+            }
+            
+            // Update Output Section
+            const statusOutput = document.getElementById('status-prediksi');
+            statusOutput.textContent = jenisDiet;
+            statusOutput.style.color = statusWarna; 
+            document.getElementById('rekomendasi-menu-output').innerHTML = `<strong>Contoh Menu Rekomendasi:</strong> ${menuRekomendasi}<br><strong>Analisis Fitur:</strong> ${detailPrediksi}`;
+            
+            // Tampilkan dengan efek fade-in
+            setTimeout(() => {
+                hasilPrediksiDiv.classList.add('show');
+            }, 50);
+
+            // Update Riwayat Rekomendasi
+            const riwayatList = document.getElementById('riwayat-list');
+            const today = new Date().toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'});
+            const menuPreview = menuRekomendasi.length > 20 ? menuRekomendasi.substring(0, 20) + '...' : menuRekomendasi;
+            const newEntry = document.createElement('li');
+            newEntry.textContent = `[${today}] Usia ${usia}, Aktif ${aktivitas.replace('_', ' ').replace('sangat', 'S.')}, ${targetKalori} Kcal: ${jenisDiet.replace('Klasifikasi ', '')} (${menuPreview})`;
+            
+            riwayatList.prepend(newEntry);
+            
+            // Scroll ke bagian Hasil Prediksi
+            document.getElementById('hasil-prediksi-menu').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        // Panggil fungsi saat DOM selesai dimuat
+        document.addEventListener('DOMContentLoaded', () => {
+            // Memastikan Main Content "Rekomendasi" yang aktif pertama kali
+            switchMainContent('rekomendasi-section');
+        });
+    </script>
+</body>
+</html>
